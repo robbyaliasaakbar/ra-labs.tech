@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output (hasil build di root WAJIB di-commit, lihat contributing.md)
+dist/
+.vite/
+*.tsbuildinfo
+
+# Env & secret
+.env
+.env.*
+.env.local
+
+# OS & editor
+.DS_Store
+.vscode/
+.idea/
+
+# Log
+*.log
+npm-debug.log*
+
+# Catatan kerja pribadi (bukan dokumentasi repo)
+chat.md
+aturan-kerja.md
+template-awal.md
+hasil_inspeksi.md
+issue.md
+
+# Planning (belum di-track untuk sekarang)
+plan-prd/

@@ -1,0 +1,14 @@
+/* TEAM */
+Nama: Robby Aliasa Akbar
+Kota: Bekasi, Indonesia
+
+/* SITE */
+Nama: RaLabs
+Alamat: https://ra-labs.tech/
+Bahasa: Bahasa Indonesia
+Standar: HTML5, CSS3, JavaScript
+Komponen: React 18, Vite 6, Tailwind CSS 3.4, React Router 7
+Host: Hostinger shared hosting (Apache)
+
+/* THANKS */
+Comfortaa dan JetBrains Mono dari Google Fonts.

@@ -1,0 +1,9 @@
+# www.ra-labs.tech wajib 301 ke apex, biar Google cuma kenal satu rumah.
+# Tanpa ini www menyajikan isi sama tanpa redirect = duplikat konten.
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^www\.ra-labs\.tech$ [NC]
+RewriteRule ^(.*)$ https://ra-labs.tech/$1 [R=301,L]
+
+# Tanpa baris ini, Hostinger menampilkan template 404 bawaan mereka,
+# bukan 404.html milik portal. Status tetap 404, hanya tampilannya yang salah.
+ErrorDocument 404 /404.html

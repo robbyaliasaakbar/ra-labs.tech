@@ -1,0 +1,193 @@
+/* ---- Footer ----
+   Diport dari footer porto (src/components/shared/Footer.jsx di web
+   porto Robby Aliasa Akbar): latar gelap bertekstur grid, blok status
+   dengan live-dot, tiga kolom, dan tautan yang panah "masuk dari kiri"
+   saat hover.
+
+   Bedanya sama porto: warnanya dibalik per tema. Porto selalu gelap,
+   portal RaLabs punya tema terang dan gelap, jadi di sini:
+     tema terang -> latar tinta, teks kertas
+     tema gelap  -> latar kertas, teks tinta
+   Semua opasitas teks dan garis diambil dari variable --footer-* yang
+   ditukar di global.css, jadi satu set aturan ini cukup untuk dua tema.
+
+   Font: porto memakai Plus Jakarta Sans untuk semua teks. Di sini yang
+   paling dekat adalah Manrope (tema terang) dan Comfortaa (isi), jadi
+   label dan judul memakai Manrope, sisanya mengikuti body. */
+
+.footer {
+  background-color: var(--footer-lapangan);
+  /* Tekstur grid: dua garis tipis 1px, jarak 56px. */
+  background-image:
+    linear-gradient(var(--footer-tekstur) 1px, transparent 1px),
+    linear-gradient(90deg, var(--footer-tekstur) 1px, transparent 1px);
+  background-size: 56px 56px;
+  color: var(--footer-teks-solid);
+  position: relative;
+}
+
+/* Di tema gelap: Latar Kertas Terang Colophon Studio (bersih dari garis/grid yang mengganggu teks) */
+html[data-theme='gelap'] .footer {
+  background-color: #f8fafc;
+  background-image: none;
+  color: #0c0c0c;
+}
+
+/* ---- Strip Perforasi Tiket Studio (Tear-Off Edge) ---- */
+.footer-perforasi-strip {
+  width: 100%;
+  position: relative;
+  border-top: 1px dashed rgba(12, 12, 12, 0.2);
+  padding-bottom: 0.5rem;
+  user-select: none;
+}
+
+.footer-perforasi-lubang {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-image: radial-gradient(circle 3px at 8px 4px, #0e0f12 3px, transparent 3.5px);
+  background-size: 16px 8px;
+  pointer-events: none;
+}
+
+html:not([data-theme='gelap']) .footer-perforasi-strip {
+  border-top-color: rgba(248, 250, 252, 0.2);
+}
+
+html:not([data-theme='gelap']) .footer-perforasi-lubang {
+  background-image: radial-gradient(circle 3px at 8px 4px, #f8fafc 3px, transparent 3.5px);
+}
+
+/* ---- Kolom identitas ---- */
+
+.footer-nama {
+  margin: 0;
+  font-family: 'Manrope', 'Comfortaa', ui-rounded, system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--footer-teks-solid);
+}
+
+.footer-peran {
+  margin: 0.75rem 0 0;
+  font-family: 'Manrope', 'Comfortaa', ui-rounded, system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--merah);
+}
+
+.footer-tagline {
+  margin: 1.25rem 0 0;
+  max-width: 24rem;
+  font-size: 1rem;
+  line-height: 1.625;
+  color: var(--footer-teks-muram);
+}
+
+/* ---- Judul kolom dan daftar tautan ---- */
+
+.footer-judul-kolom {
+  margin: 0;
+  font-family: 'Manrope', 'Comfortaa', ui-rounded, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--footer-teks-lembut);
+}
+
+/* Gap antar item dibuat nol, karena tinggi minimum tiap tautan yang
+   sudah 44px itu sendiri yang mengatur jarak. Hasilnya ruang antar
+   tautan tetap rapat seperti diporto, tapi target sentuhnya memenuhi
+   aturan repo. */
+.footer-daftar {
+  display: flex;
+  flex-direction: column;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Tautan: warna 72 persen, panah masuk dari kiri saat hover.
+   Hover dibungkus @media (hover: hover) supaya di layar sentuh
+   tautannya tidak nyangkut menampilkan panah setelah ditap. */
+.footer-tautan {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--footer-teks);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.footer-tautan::after {
+  content: '\2192';
+  display: inline-block;
+  margin-left: 0.4em;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+@media (hover: hover) {
+  .footer-tautan:hover {
+    color: var(--footer-teks-solid);
+  }
+
+  .footer-tautan:hover::after {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Section yang sedang di layar: warna penuh dan tebal. Aturannya
+   ditulis setelah .footer-tautan supaya menang di spesifisitas sama. */
+.footer-tautan-aktif {
+  color: var(--footer-teks-solid);
+  font-weight: 700;
+}
+
+/* ---- Bar paling bawah ---- */
+
+.footer-bawah {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--footer-garis);
+  font-size: 0.875rem;
+  color: var(--footer-teks-lembut);
+}
+
+@media (min-width: 640px) {
+  .footer-bawah {
+    flex-direction: row;
+  }
+}
+
+.footer-domain {
+  margin: 0;
+  font-family: 'Comfortaa', ui-rounded, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+/* Gerak dimatikan kalau pengguna minta animasi minim. Yang tersisa cuma
+   panah yang masuk saat hover, jadi dimatikan tidak mengubah informasi
+   apa pun. */
+@media (prefers-reduced-motion: reduce) {
+  .footer-tautan::after {
+    transition: none;
+  }
+}

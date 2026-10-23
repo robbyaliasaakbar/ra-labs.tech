@@ -1,0 +1,1036 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Token tetap: empat warna, dipakai ulang lewat variable. */
+:root {
+  --kertas: #f8fafc;
+  --tinta: #0c0c0c;
+  --merah: #d70000;
+  --kuning: #ffe578;
+
+  /* Mode terang: bidang kertas, teks tinta. */
+  --bidang: #f8fafc;
+  --teks: #0c0c0c;
+  --garis: #0c0c0c;
+  /* Bidang lawan dipakai pita Collection dan Footer. */
+  --lawan-bidang: #0c0c0c;
+  --lawan-teks: #f8fafc;
+  /* Footer: latarnya dibalik per tema. Tema terang pakai tinta seperti
+     footer porto, tema gelap pakai kertas. Semua opasitas teks dan garis
+     ikut ditukar, jadi Footer.css cuma butuh satu set aturan. */
+  --footer-lapangan: #0c0c0c;
+  --footer-teks-solid: #f8fafc;
+  --footer-teks: rgba(248, 250, 252, 0.72);
+  --footer-teks-muram: rgba(248, 250, 252, 0.6);
+  --footer-teks-lembut: rgba(248, 250, 252, 0.55);
+  --footer-garis: rgba(248, 250, 252, 0.1);
+  --footer-tekstur: rgba(248, 250, 252, 0.03);
+  /* Gradasi teks judul: dua ujungnya tetap turunan tinta, cuma kecerahannya beda. */
+  --grad-atas: rgba(12, 12, 12, 0.4);
+  --grad-bawah: #0c0c0c;
+  /* Bayangan logo hero. Tema terang: bayangan item, seperti bayangan
+     objek di atas kertas. Lebar dan kegelapannya ditulis dari loop render
+     3D (--lebar-bayang, --padam-bayang, --bawah-bayang), jadi bayangan
+     ngikutin rotasi logo. */
+  --bayang: rgba(12, 12, 12, 0.22);
+  --bayang-inti: rgba(12, 12, 12, 0.5);
+  /* Grid latar bengkel (default tema terang transparan) */
+  --grid-bengkel: transparent;
+  color-scheme: light;
+}
+
+/* Mode gelap menukar peran kertas dan tinta. Merah dan kuning tidak berubah. */
+html[data-theme='gelap'] {
+  --bidang: #0c0c0c;
+  --teks: #f8fafc;
+  --garis: #f8fafc;
+  --lawan-bidang: #f8fafc;
+  --lawan-teks: #0c0c0c;
+  /* Footer di tema gelap: dibalik. Latar jadi kertas, teks jadi tinta,
+     opasitas dan garis ikut mengikuti. Merah tetap merah, dia aksen.
+
+     Opasitasnya BEDA dari tema terang, dan itu bukan karena inconsistent.
+     Alpha 0.55 tinta di atas kertas cuma jadi 4.29:1, di bawah batas 4.5:1
+     buat teks kecil. Jadi di tema gelap dinaikkan ke 0.60 (5.10:1) dan 0.65
+     (6.01:1), dan urutannya tetap sama: tautan paling terang, lalu tagline,
+     lalu judul kolom. */
+  --footer-lapangan: #f8fafc;
+  --footer-teks-solid: #0c0c0c;
+  --footer-teks: rgba(12, 12, 12, 0.72);
+  --footer-teks-muram: rgba(12, 12, 12, 0.65);
+  --footer-teks-lembut: rgba(12, 12, 12, 0.6);
+  --footer-garis: rgba(12, 12, 12, 0.1);
+  --footer-tekstur: rgba(12, 12, 12, 0.03);
+  --grad-atas: rgba(248, 250, 252, 0.35);
+  --grad-bawah: #f8fafc;
+  /* Bayangan logo di tema gelap pakai warna WARM, bukan item. Alasannya
+     nyata: di atas tinta pekat, bayangan item nyaris nggak kelihatan,
+     jadi logo keliakan melayang tanpa pijakan. Amber lembut bikin
+     kesan nempelnya tetap ada, dan warmed-up sama tim merah logo. */
+  --bayang: rgba(255, 210, 130, 0.16);
+  --bayang-inti: rgba(255, 210, 130, 0.34);
+  /* Grid latar bengkel di tema gelap */
+  --grid-bengkel: rgba(248, 250, 252, 0.038);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bidang font-sans text-teks antialiased;
+  }
+
+  /* Cincin fokus: 3px merah, offset 3px. Kelihatan di kertas, tinta, dan kuning. */
+  :focus-visible {
+    outline: 3px solid var(--merah);
+    outline-offset: 3px;
+  }
+
+  /* Judul memakai clamp, rata kiri, tidak semua tebal. */
+  h1,
+  h2,
+  h3 {
+    @apply font-bold leading-tight;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* Judul memakai clamp, bukan ukuran pixel yang sama dari ponsel sampai desktop. */
+  .judul-besar {
+    font-size: clamp(1.9rem, 4.4vw, 3.6rem);
+    line-height: 1.12;
+  }
+
+  /* Copy hero: satu blok statement, tidak berteriak. */
+  .judul-hero {
+    max-width: 54ch;
+    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .judul-bagian {
+    font-size: clamp(1.5rem, 2.8vw, 2.4rem);
+    line-height: 1.15;
+  }
+
+  /* ---- Headline hero: SATU artwork SVG per tema ----
+     Dua file di public/images, masing-masing sudah utuh (eyebrow THIS IS,
+     RA LABS, tiga chip, polilin merah):
+       - Light-headline1x.svg  → tema terang (default)
+       - Dark-headline1x.svg   → tema gelap
+     viewBox 1084.25 x 368.65 (rasio 2.94:1). Img punya atribut
+     width/height, jadi browser sudah kunci rasio aspeknya sebelum file
+     termuat: tidak ada layout shift, dan logo 3D di bawah tidak terdorong. */
+  .hero-headline-gambar {
+    margin: 0;
+    width: 100%;
+  }
+
+  /* Lebar penuh, TINGGIMAKS dijaga supaya banner logo 3D dan bar CTA
+     di bawah tetap kebagian ruang (tanpa ini hero membengkak dan bar
+     CTA jatuh ke bawah fold). object-fit: contain bikin gambar mengecil
+     seragam memegang rasio 2.94:1, rata tengah, tanpa distorsi.
+     Mobile lepas cap: lebar layar sudah bikin tingginya muat sendiri. */
+  .hero-headline-img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Mobile di bawah 768px: lebar penuh bikin banner headline kegedean
+     dan menekan logo 3D + bar CTA. Dibatasi 70% lebar layar dan
+     dicenter, jadi tingginya ikut mengecil seragam (rasio 2.94:1
+     tetap terjaga, tanpa distorsi). */
+  @media (max-width: 767px) {
+    .hero-headline-img {
+      max-width: 70%;
+      margin-inline: auto;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .hero-headline-img {
+      max-height: clamp(130px, min(25svh, 15.5vw), 230px);
+      object-fit: contain;
+      object-position: center top;
+    }
+  }
+
+  /* Default terang: file dark disembunyikan. */
+  .hero-headline-img-gelap {
+    display: none;
+  }
+
+  /* Ganti tema: sama persis pola .hero-latar. html[data-theme='gelap']
+     sudah dipasang sebelum React jalan, jadi tukarnya instan tanpa flicker. */
+  html[data-theme='gelap'] .hero-headline-img-terang {
+    display: none;
+  }
+
+  html[data-theme='gelap'] .hero-headline-img-gelap {
+    display: block;
+  }
+
+  /* Baris isi di bawah 80 karakter. */
+  .isi {
+    max-width: 64ch;
+    overflow-wrap: anywhere;
+    font-size: clamp(1rem, 1.1vw, 1.125rem);
+    line-height: 1.7;
+  }
+
+  /* Tombol terisi merah: satu per bagian, label selalu kertas di atas merah. */
+  .tombol-merah {
+    @apply inline-flex min-h-[44px] items-center justify-center bg-merah px-5 py-3 font-sans font-bold text-kertas;
+  }
+
+  /* Tombol garis: mengikuti warna teks bidangnya, bukan merah. */
+  .tombol-garis {
+    @apply inline-flex min-h-[44px] items-center justify-center border border-current px-5 py-3 font-sans font-bold text-teks;
+  }
+
+  /* CTA utama: bentuk pill. Warna, font, dan isi sama persis dengan .tombol-merah
+     / .tombol-garis; yang berubah cuma sudut. Dipakai tombol di hero, About,
+     dan Gerbang supaya satu bahasa visual. Kelas kotak disimpan kalau nanti
+     ada bagian yang butuh sudut tegas. */
+  .tombol-merah-pill {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full bg-merah px-6 py-3 font-sans font-bold text-kertas;
+  }
+
+  .tombol-garis-pill {
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-full border border-current px-6 py-3 font-sans font-bold text-teks;
+  }
+
+  /* Hover dua CTA hero:
+     - merah-pill  -> isi tinta, teks kertas
+     - garis-pill  -> isi merah, teks kertas (border ikut merah biar tepinya rata)
+     Transisi cuma di color/background/border-color supaya tata letak tidak
+     bergeser. Dibungkus (hover: hover) supaya di layar sentuh tombolnya tidak
+     nyangkut di warna hover setelah ditap. */
+  .tombol-merah-pill,
+  .tombol-garis-pill {
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .tombol-merah-pill:hover {
+      background-color: var(--tinta);
+      color: var(--kertas);
+    }
+
+    .tombol-garis-pill:hover {
+      background-color: var(--merah);
+      border-color: var(--merah);
+      color: var(--kertas);
+    }
+  }
+
+  /* Tautan teks biasa: warna teks bidang, bukan merah. */
+  .tautan-teks {
+    @apply underline decoration-1 underline-offset-4;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ---- Background hero: cahaya yang menyebar dari pojok kanan atas ----
+   Bukan bayangan benda, bukan blok, bukan bentuk. Ini cahaya yang keluar dari
+   satu titik di pojok kanan atas dan makin jauh makin tipis, sampai hilang
+   tanpa bekas. Bedanya cuma satu: cahayanya berwarna gelap.
+
+   Kenapa gradient nempel langsung di <section>, bukan di <div>:
+   div pasti punya bentuk (kotak). Walaupun gradient di dalamnya halus, batas
+   div-nya tetap bisa terasa. Dengan ditempel di section, tidak ada wadah sama
+   sekali — yang ada cuma bidang yang gelapnya luruh ke arah tengah.
+
+   Nilai ini hasil tuning Bang Rob: pekat di pojok, jangkauan jauh melewati
+   tengah layar, hilang total tanpa tepi. JANGAN diubah tanpa izin. */
+.hero-section {
+  /* Jatah kosong di atas statement kiri. Naikkan untuk mengangkat baris
+     "Building", turunkan untuk mendekatkannya. Tidak masuk hitungan tinggi
+     logo karena tumpukannya di luar aliran. */
+  --slot-kiri: 4.6rem;
+  /* Kotak dua mark di kluster CTA. 72px di HP, 120px dari md.
+     Naik-turun cuma di sini. Cadangan bawah logo di Hero.jsx harus
+     ikut disinkronkan: 210px di bawah md, 330px dari md. */
+  --mark-kecil: 72px;
+  /* Full-bleed ke belakang navbar: section ditarik naik 84px (tinggi navbar)
+     di bawah header sticky yang transparan, padding-top 84px balikin posisi
+     konten. Background radial ikut naik jadi nyambung mulus tanpa seam.
+     min-height 100svh (bukan calc) karena padding sudah termasuk di dalamnya,
+     area konten tetap 100svh - 84px sama kayak sebelumnya. */
+  margin-top: -84px;
+  padding-top: 84px;
+  background-color: var(--bidang);
+  /* Radial gradient (terang DAN gelap) sudah diganti total oleh canvas
+     AcidSquares yang di-mount di Hero.jsx (absolute inset-0 z-0).
+     Background-color tetap dipertahankan sebagai fallback warna dasar
+     di belakang canvas. */
+}
+
+/* Latar hero AcidSquares: dua instance, dipilih CSS lewat data-theme.
+   Tema terang tampil di default; tema gelap menukar. Yang tersembunyi
+   pakai display:none supaya clientWidth-nya 0 dan canvas-nya berhenti
+   render sendiri (ResizeObserver + IntersectionObserver di komponen). */
+.hero-latar {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-latar-gelap {
+  display: none;
+}
+
+html[data-theme='gelap'] .hero-latar-terang {
+  display: none;
+}
+
+html[data-theme='gelap'] .hero-latar-gelap {
+  display: block;
+}
+
+/* Bayangan logo hero. Logonya melayang, jadi ada bayangan lembut di
+   bawahnya supaya keliakan nempel ke "lantai".
+
+   BUKAN objek di dalam canvas 3D: canvas-nya kotak dan pas banget sama
+   logo, jadi nggak ada ruang buat bayangan tanpa ngubah ukuran logonya.
+   Elemen ini diletakkan di luar canvas (absolut), jadi layout hero tidak
+   bergeser sama sekali.
+
+   Tiga variabel di bawah ditulis dari loop render 3D tiap frame:
+   --lebar-bayang  lebar bayangan, mengikuti lebar logo yang kelihatan
+                   dari sudut pandang sekarang
+   --padam-bayang  seberapa gelap, mengikuti seberapa "muka" logonya.
+                   Makin pipih, makin pudar — kayak bayangan beneran.
+   --bawah-bayang  jarak dari bawah container ke bawah logo, dalam persen.
+                   Dipakai buat menaruh bayangan tepat di bawah logonya:
+                   top bayangan = 100% - jarak ini + celah.
+
+   Warna sendiri per tema: item di terang, warm di gelap (lihat token
+   --bayang dan --bayang-inti). */
+.logo-bayang {
+  position: absolute;
+  left: 50%;
+  /* Atas bayangan ditempel di bawah logo, dikasih celah 4% biar keliakan
+     melayang. --bawah-bayang adalah jarak bawah logo ke bawah container. */
+  top: calc(100% - var(--bawah-bayang, 10%) + 4%);
+  width: var(--lebar-bayang, 60%);
+  height: 7%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: var(--padam-bayang, 1);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    var(--bayang-inti) 0%,
+    var(--bayang) 42%,
+    transparent 72%
+  );
+}
+
+/* Baris kiri hero: "Building" + kata berputar. Comfortaa mentok di 700,
+   jadi badan "Building" ditebalkan stroke warna yang sama. Stroke hanya
+   di kata diam; kata di blok merah tidak ikut, biar isi blok tetap rata. */
+.hero-baris-kiri {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  color: var(--teks);
+  font-family: Comfortaa, ui-rounded, system-ui, sans-serif;
+  font-size: clamp(1.15rem, 2.1vw, 2rem);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hero-kata-diam {
+  -webkit-text-stroke: 0.04em currentColor;
+  paint-order: stroke fill;
+}
+
+/* Baris rotating text di pojok kanan bawah gerbang.
+   Mirip .hero-baris-kiri, tapi:
+   - Warna DIKUNCI tinta, bukan var(--teks): surface gerbang selalu
+     terang di dua tema, jadi teks harus gelap supaya tetap terbaca.
+   - Ukuran lebih besar dari hero (clamp 1.4rem..2.8rem vs 1.15..2).
+   - Posisi absolute di Gerbang.jsx, bukan di sini. */
+.gerbang-baris-teks {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  color: #0c0c0c;
+  font-family: Comfortaa, ui-rounded, system-ui, sans-serif;
+  font-size: clamp(1.4rem, 2.8vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.gerbang-kata-diam {
+  /* Warna kertas: surface gerbang sekarang tinta pekat (SideRays),
+     jadi kata diam harus terang. Stroke memakai currentColor, jadi
+     ikut kertas otomatis. Kata di RotatingText TIDAK ikut diatur di
+     sini — itu tetap pakai warna pembungkusnya. */
+  color: var(--kertas);
+  -webkit-text-stroke: 0.04em currentColor;
+  paint-order: stroke fill;
+}
+
+/* Jam di pojok kanan bawah gerbang. Komponen HeroClock dipakai ulang,
+   tapi kelasnya di-override di sini:
+   - Warna kertas: surface gerbang sekarang tinta pekat (SideRays).
+   - Rata kanan, biar menempel tepi seperti pasangannya di kiri.
+   - Ukuran lebih besar dari hero: tanggal dan angka sama-sama naik. */
+.gerbang-jam {
+  color: var(--kertas);
+}
+
+/* HeroClock bawa color sendiri di .hero-jam (var(--teks)) yang menang
+   atas parent. Di gerbang surface-nya tinta, jadi dipaksa kertas di sini.
+   Titik dua sengaja BELUM diubah — masih merah, aksen satu-satunya. */
+.gerbang-jam .hero-jam {
+  align-items: flex-end;
+  color: var(--kertas);
+}
+
+.gerbang-jam .hero-jam-tanggal {
+  font-size: clamp(0.85rem, 1.3vw, 1.1rem);
+}
+
+.gerbang-jam .hero-jam-angka {
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+}
+
+/* Versi HP gerbang: rotating text dan jam dikecilkan. Clamp di atas
+   mengatur desktop; di sini cuma override di bawah 768px supaya pojok
+   bawah gerbang tidak sesak di layar sempit. */
+@media (max-width: 767px) {
+  .gerbang-baris-teks {
+    font-size: 1.05rem;
+  }
+
+  .gerbang-jam .hero-jam-tanggal {
+    font-size: 0.65rem;
+  }
+
+  .gerbang-jam .hero-jam-angka {
+    font-size: 1.25rem;
+  }
+}
+
+.hero-slot-kiri {
+  display: flex;
+  align-items: flex-end;
+  box-sizing: border-box;
+  height: var(--slot-kiri);
+  /* Angkat jam dari kalimat di bawah. Tinggi slot tidak berubah,
+     jadi baris "Building" di atasnya tidak ikut naik. */
+  padding-bottom: 0.85rem;
+}
+
+/* Pernyataan hero: "RUMAH DARI SEMUA PROJECT. SEMUANYA ADA DISINI."
+
+   Di tema terang, latar hero itu tile AcidSquares yang punya gradien dan
+   bayangan sendiri. Huruf pernyataan ini tipis (font-light) dan kecil,
+   jadi di atas tile yang gradasinya gelap, kontrasnya hilang sebagian —
+   teksnya jadi nyaris hilang
+
+   Diatasnya ditaruh blok kertas rounded (token --kertas), jadi hurufnya
+   dapat latar rata dan langsung kebaca.
+
+   HANYA di tema terang. Di tema gelap latarnya sudah pekat dan teksnya
+   kontras, jadi blok kertasnya dimatikan — kalau tidak, blok terang
+   jadi noda yang nggak nyambung sama latarnya.
+
+   Padding-nya dikompensasi margin negatif, jadi tinggi baris dan posisi
+   teksnya nggak bergeser sama sekali. Bloknya cukup sedikit lebih besar
+   dari teksnya, jadi hurufnya dapet latar rata tanpa ruin tampilan baris
+   "Building Apps" dan jam yang ada di atasnya. */
+html:not([data-theme='gelap']) .hero-pernyataan {
+  display: inline-block;
+  background-color: var(--kertas);
+  border-radius: 1rem;
+  padding: 0.5rem 0.65rem;
+  margin: -0.5rem 0 -0.5rem -0.65rem;
+}
+
+/* Jam di celah kiri hero. Tanpa blok. Tanggal Comfortaa, angka JetBrains
+   lebih besar supaya lebarnya mendekati baris tanggal. Titik dua satu-satunya
+   aksen. Ukuran jam tetap di bawah "Building". */
+.hero-jam {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  color: var(--teks);
+}
+
+.hero-jam-tanggal {
+  margin: 0;
+  font-family: Comfortaa, ui-rounded, system-ui, sans-serif;
+  font-size: clamp(0.7rem, 1.05vw, 0.9rem);
+  font-weight: 400;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.hero-jam-angka {
+  margin: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(1.35rem, 2.4vw, 2.05rem);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.hero-jam-titik {
+  color: var(--merah);
+}
+
+@media (min-width: 768px) {
+  .hero-section {
+    --mark-kecil: 120px;
+  }
+}
+
+/* Kluster kanan hero. Satu DOM, pindah lewat grid supaya tiap mark
+   cuma punya satu kanvas.
+   HP: pill bisnis sendiri, dua mark di kanan baris portfolio.
+   md ke atas: tiap mark di atas pill-nya.
+   HP: kolom pertama 1fr menelan sisa lebar, jadi dua mark digeser ke
+   kanan surface dan posisi CTA lebih proporsional. Column-gap 0.3rem
+   mendempetkan kedua mark. Dari md lebar kembali max-content. */
+.hero-cta {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  column-gap: 0.3rem;
+  row-gap: 0.25rem;
+  align-items: end;
+  justify-content: start;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas:
+    "bisnis bisnis bisnis"
+    "porto indeep ibbor";
+}
+
+.hero-cta-bisnis { grid-area: bisnis; justify-self: start; }
+.hero-cta-porto { grid-area: porto; justify-self: start; }
+.hero-cta-indeep { grid-area: indeep; justify-self: center; }
+.hero-cta-ibbor { grid-area: ibbor; justify-self: center; }
+
+.mark-3d {
+  width: var(--mark-kecil);
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .hero-cta {
+    width: max-content;
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+    justify-items: center;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      "indeep ibbor"
+      "bisnis porto";
+  }
+
+  .hero-cta-bisnis,
+  .hero-cta-porto,
+  .hero-cta-indeep,
+  .hero-cta-ibbor {
+    justify-self: center;
+  }
+}
+
+/* Surface gerbang: DIBALIK — dasar kertas (terang), pencahayaan tinta
+   (gelap). Studio lighting yang sama seperti versi gelap, tapi arah
+   luminasinya terbalik: bayangan gelap yang menyebar, bukan cahaya
+   terang. Satu surface buat dua tema, tidak ikut toggle.
+   Class dipisah dari .hero-section supaya tuning hero tidak bocor. */
+/* Surface gerbang: tinta pekat + SideRays.
+   Dulu gradient + grain tinggal di ::before supaya bisa diredupkan sebagai
+   satu kesatuan saat gerbang dibuka. Sekarang lapisan itu dipegang
+   .gerbang-latar (elemen biasa), jadi ::before tidak dipakai lagi —
+   tidak ada pseudo-element yang tersisa.
+
+   .gerbang-latar diberi opacity dari --gerbang-latar yang ditulis
+   Gerbang.jsx tiap frame (1 → 0). z-index -1 menaruhnya di belakang isi
+   dialog; permukaannya sendiri sudah jadi stacking context (fixed + z-50),
+   jadi -1 tidak akan jatuh ke belakang halaman. */
+.gerbang-surface {
+  background-color: #0c0c0c;
+}
+
+.gerbang-latar {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: var(--gerbang-latar, 1);
+  pointer-events: none;
+}
+
+/* Latar About tema terang: Kertas (#f8fafc) bersih dengan grid 48px nyata (bebas dari noda hitam) */
+html:not([data-theme='gelap']) #about {
+  background-color: var(--bidang);
+  background-image:
+    /* Grid bengkel kode 48px nyata di atas kertas */
+    linear-gradient(rgba(12, 12, 12, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(12, 12, 12, 0.08) 1px, transparent 1px);
+  background-size:
+    48px 48px,
+    48px 48px;
+  background-position:
+    center top,
+    center top;
+}
+
+/* Latar Collection tema terang: bersih mengikuti kanvas panggung cardswap */
+html:not([data-theme='gelap']) #collection {
+  background-color: transparent;
+  background-image: none;
+  color: var(--teks);
+}
+
+/* ---- Tumpukan kartu Collection (adaptasi reference/card-swap-components.md) ----
+   Tanpa gradient, tanpa bayangan, tanpa kaca. Hanya bidang dan garis palet. */
+.kartu-swap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kartu-swap-pengukur {
+  max-height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kartu-swap-pengukur > span {
+  display: block;
+  width: 100%;
+  max-width: var(--swap-stage-w);
+  aspect-ratio: var(--swap-ratio);
+}
+
+.kartu-swap-panggung {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--swap-stage-w);
+  height: var(--swap-stage-h);
+  perspective: 900px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.kartu-swap-slot {
+  position: absolute;
+  top: var(--swap-oy);
+  left: var(--swap-ox);
+  width: var(--swap-w);
+  height: var(--swap-h);
+  margin: calc(var(--swap-h) / -2) 0 0 calc(var(--swap-w) / -2);
+  border-radius: var(--swap-radius);
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.kartu-swap-kartu {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--kertas);
+  border-radius: inherit;
+  background: var(--tinta);
+  color: var(--kertas);
+}
+
+html[data-theme='gelap'] .kartu-swap-kartu {
+  border-color: var(--tinta);
+  background: var(--kertas);
+  color: var(--tinta);
+}
+
+/* Naungan SELALU kebalikan warna kartu supaya meredupkan, bukan menyatu.
+   Ikut flip kartu Collection: terang kartu tinta -> naungan kertas. */
+.kartu-swap-naungan {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background: var(--kertas);
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-theme='gelap'] .kartu-swap-naungan {
+  background: var(--tinta);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kartu-swap-slot {
+    transition: none;
+  }
+}
+
+/* ---- Latar Bengkel: About (Mandiri) ---- */
+.latar-bengkel-about {
+  background-color: var(--bidang);
+  position: relative;
+  /* Tema Terang: Kertas (#f8fafc) dengan pencahayaan warm museum spotlight & grid 48px */
+  background-image:
+    /* Warm gallery spotlight di area carousel (kanan) */
+    radial-gradient(circle 580px at 75% 50%, rgba(245, 158, 11, 0.12), rgba(251, 191, 36, 0.04) 50%, transparent 72%),
+    /* Ambient warm glow lembut di kiri untuk balance editorial */
+    radial-gradient(circle 420px at 20% 45%, rgba(254, 243, 199, 0.35), transparent 70%),
+    /* Grid bengkel kode 48px nyata di atas kertas */
+    linear-gradient(rgba(12, 12, 12, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(12, 12, 12, 0.08) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    48px 48px,
+    48px 48px;
+  background-position:
+    0 0,
+    0 0,
+    center top,
+    center top;
+}
+
+/* ---- Gallery Turntable Podium (Meja Putar Galeri Tema Terang) ---- */
+.podium-turntable {
+  width: min(98%, 560px);
+  height: 54px;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .podium-turntable {
+    height: 70px;
+  }
+}
+
+/* Halo cahaya warm gallery (3000K luxury lighting) di belakang kartu carousel */
+.podium-halo-warm {
+  position: absolute;
+  top: -110px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 540px);
+  height: 230px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.09) 45%, transparent 72%);
+  filter: blur(36px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Bayangan kontak lantai pekat di bawah slab */
+.podium-bayangan {
+  position: absolute;
+  width: 94%;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(12, 12, 12, 0.26) 0%, rgba(12, 12, 12, 0.12) 50%, transparent 72%);
+  filter: blur(12px);
+  transform: translateY(20px);
+}
+
+@media (min-width: 768px) {
+  .podium-bayangan {
+    height: 64px;
+    transform: translateY(26px);
+  }
+}
+
+/* Slab silinder fisik 3D: memberikan ketebalan nyata meja putar galeri */
+.podium-slab-tebal {
+  position: absolute;
+  inset: 0;
+  transform: translateY(10px);
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #64748b 0%, #94a3b8 16%, #cbd5e1 45%, #f1f5f9 60%, #94a3b8 84%, #64748b 100%);
+  border: 1.5px solid rgba(12, 12, 12, 0.3);
+  box-shadow:
+    0 14px 28px -4px rgba(12, 12, 12, 0.22),
+    0 4px 8px rgba(12, 12, 12, 0.12);
+}
+
+@media (min-width: 768px) {
+  .podium-slab-tebal {
+    transform: translateY(14px);
+  }
+}
+
+/* Piringan elips atas (turntable platter marmer & aksen warm champagne) */
+.podium-piringan {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff 0%, #fffdfa 45%, #fef3c7 80%, #fde68a 100%);
+  border: 1.5px solid rgba(217, 119, 6, 0.25);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 1),
+    inset 0 -3px 6px rgba(217, 119, 6, 0.12),
+    0 0 16px rgba(251, 191, 36, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Cincin stroboskopik ala turntable presisi dengan sentuhan warm */
+.podium-cincin-strobe {
+  position: absolute;
+  width: 88%;
+  height: 78%;
+  border-radius: 50%;
+  border: 1.5px dotted rgba(217, 119, 6, 0.3);
+}
+
+/* Cincin konsentris dalam */
+.podium-cincin-dalam {
+  position: absolute;
+  width: 74%;
+  height: 62%;
+  border-radius: 50%;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85) 0%, rgba(254, 243, 199, 0.45) 100%);
+}
+
+/* Di tema gelap: podium turntable dimatikan karena tema gelap sudah locked */
+html[data-theme='gelap'] .podium-turntable {
+  display: none;
+}
+
+html[data-theme='gelap'] .latar-bengkel-about {
+  background-color: #0c0c0c;
+  background-image:
+    radial-gradient(circle 380px at 15% 55%, rgba(255, 255, 255, 0.02), transparent 70%),
+    /* Grid bengkel kode 48px */
+    linear-gradient(var(--grid-bengkel) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-bengkel) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    48px 48px,
+    48px 48px;
+  background-position:
+    0 0,
+    center top,
+    center top;
+}
+
+/* ---- Latar Bengkel: Collection (Mandiri - Studio Paper Canvas) ---- */
+.latar-bengkel-collection,
+.latar-bengkel-koleksi-kontak {
+  /* Di tema terang: kertas studio (#f1f5f9) 1 notch lebih sejuk dari kertas About (#f8fafc) */
+  background-color: #f1f5f9;
+  position: relative;
+  border-top: 1px solid rgba(12, 12, 12, 0.08);
+}
+
+/* ---- Latar Abstrak Gradient Khusus Tema Terang ---- */
+.kertas-lecek-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('/images/gradient-abstract.svg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 1;
+}
+
+/* Di tema gelap: tekstur kertas lecek dimatikan sepenuhnya */
+html[data-theme='gelap'] .kertas-lecek-overlay {
+  display: none;
+}
+
+html[data-theme='gelap'] .latar-bengkel-collection,
+html[data-theme='gelap'] .latar-bengkel-koleksi-kontak {
+  /* Diganti ke deep graphite/charcoal hangat (#121316), bukan hitam pekat mati */
+  background-color: #121316;
+  background-image: none;
+  border-top: none;
+}
+
+/* ---- Panggung Fisik CardSwap (Elevated Studio Showcase Pedestal) ---- */
+.panggung-cardswap {
+  position: relative;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Di tema gelap: nampan panggung studio dengan elevasi surface, border hairline & depth */
+html[data-theme='gelap'] .panggung-cardswap {
+  background-color: #17191e;
+  border: 1px solid rgba(248, 250, 252, 0.08);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(248, 250, 252, 0.06);
+  background-image:
+    /* Grid mikro studio teknis di dalam panggung */
+    linear-gradient(rgba(248, 250, 252, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(248, 250, 252, 0.035) 1px, transparent 1px);
+  background-size:
+    36px 36px,
+    36px 36px;
+  background-position:
+    center center,
+    center center;
+}
+
+/* Di tema terang: kotak nampan panggung & grid dihilangkan agar kartu CardSwap langsung berinteraksi dengan latar kertas lecek */
+html:not([data-theme='gelap']) .panggung-cardswap {
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+}
+
+html:not([data-theme='gelap']) .panggung-cardswap-hud {
+  display: none;
+}
+
+/* Studio Ledger overlay: aktif di kedua tema (warna otomatis adaptif ke tema) */
+.studio-ledger {
+  display: block;
+}
+
+/* ---- Latar Bengkel: Contact (Mandiri - Editorial Typography Watermark) ---- */
+.latar-bengkel-contact {
+  background-color: var(--bidang);
+  position: relative;
+  border-top: 1px solid rgba(12, 12, 12, 0.08);
+  background-image:
+    /* Ambient halo merah studio lembut di sekitar kolom kanan */
+    radial-gradient(circle 600px at 75% 65%, rgba(215, 0, 0, 0.035), transparent 70%);
+}
+
+html[data-theme='gelap'] .latar-bengkel-contact {
+  /* Deep charcoal hening studio (#0e0f12) */
+  background-color: #0e0f12;
+  border-top: none;
+  background-image: none;
+}
+
+/* Status badge contact adaptif per tema */
+.contact-status-badge {
+  border: 1px solid rgba(215, 0, 0, 0.35);
+  background-color: rgba(215, 0, 0, 0.08);
+  color: #d70000;
+}
+
+html[data-theme='gelap'] .contact-status-badge {
+  border: 1px solid rgba(215, 0, 0, 0.4);
+  background-color: rgba(215, 0, 0, 0.15);
+  color: #f8fafc;
+}
+
+.contact-watermark {
+  font-size: clamp(5.5rem, 16vw, 15rem);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(12, 12, 12, 0.07);
+  opacity: 0.8;
+  transform: translateY(-8%);
+}
+
+html[data-theme='gelap'] .contact-watermark {
+  -webkit-text-stroke: 1.5px rgba(248, 250, 252, 0.05);
+  opacity: 0.7;
+}
+
+/* ---- Kartu Kanal Contact (Asymmetric Studio Dispatch) ---- */
+.kartu-kanal-contact {
+  background-color: #ffffff;
+  border: 1.5px solid rgba(12, 12, 12, 0.12);
+  box-shadow:
+    0 14px 34px -8px rgba(12, 12, 12, 0.08),
+    0 2px 6px rgba(12, 12, 12, 0.03);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Divider di dalam kartu kanal: hitam tegas di tema terang, putih di tema gelap */
+.kartu-kanal-divider {
+  border-top: 1.5px solid rgba(12, 12, 12, 0.5);
+}
+
+html[data-theme='gelap'] .kartu-kanal-divider {
+  border-top: 1px solid rgba(248, 250, 252, 0.12);
+}
+
+.kartu-kanal-contact:hover {
+  border-color: rgba(215, 0, 0, 0.4);
+  box-shadow:
+    0 20px 40px -10px rgba(12, 12, 12, 0.12),
+    0 0 0 1px rgba(215, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+html[data-theme='gelap'] .kartu-kanal-contact {
+  background-color: rgba(23, 25, 30, 0.75);
+  border: 1px solid rgba(248, 250, 252, 0.09);
+  box-shadow:
+    0 20px 40px -15px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(248, 250, 252, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transform: none;
+}
+
+html[data-theme='gelap'] .kartu-kanal-contact:hover {
+  border-color: rgba(215, 0, 0, 0.35);
+  background-color: rgba(28, 30, 37, 0.88);
+  box-shadow:
+    0 24px 48px -15px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(248, 250, 252, 0.08);
+}
+
+/* Animasi dot kedip: hijau pas mengecil, merah pas membesar */
+@keyframes pulse-merah-hijau {
+  0%, 100% {
+    transform: scale(0.85);
+    background-color: #10b981; /* hijau studio saat mengecil */
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.6);
+  }
+  50% {
+    transform: scale(1.35);
+    background-color: #d70000; /* merah RaLabs saat membesar */
+    box-shadow: 0 0 10px 3px rgba(215, 0, 0, 0.75);
+  }
+}
+
+.dot-kedip-merah-hijau {
+  animation: pulse-merah-hijau 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+
+
