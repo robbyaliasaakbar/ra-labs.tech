@@ -1,10 +1,17 @@
+import { useEffect, useState, lazy, Suspense } from 'react'
 import FadeIn from './FadeIn.jsx'
-import Logo3D from './Logo3D.jsx'
-import Mark3D from './Mark3D.jsx'
 import RotatingText from './RotatingText.jsx'
 import TiltTombol from './TiltTombol.jsx'
 import HeroClock from './HeroClock.jsx'
 import AcidSquares from './AcidSquares.jsx'
+import { amatiTema } from './aset3d.js'
+import { bacaTema } from '../theme.js'
+import { bacaSetelanGrafis } from '../lib/perangkat.js'
+
+// Lazy-mount 3D hero untuk code-splitting (Issue #4).
+// Chunk 3D hanya diunduh setelah pengunjung mulai masuk gerbang.
+const Logo3D = lazy(() => import('./Logo3D.jsx'))
+const Mark3D = lazy(() => import('./Mark3D.jsx'))
 
 /* Hero portal RaLabs. Rombakan mengikuti plan-prd/hero-rombak/design.md:
    headline SATU baris di atas, brand mark magnet+tilt di tengah-bawah,
@@ -12,8 +19,18 @@ import AcidSquares from './AcidSquares.jsx'
 
    mulaiBackground: kalau true, animasi pembuka latar diulang dari nol.
    Dipakai pas gerbang mulai larut, supaya kvadrat latar muncul di mata
-   pengunjung, bukan sudah jadi waktu gerbang kebuka. */
-export default function Hero({ mulaiBackground = false }) {
+   pengunjung, bukan sudah jadi waktu gerbang kebuka.
+
+   siap3D: kalau true, komponen 3D (Logo3D & Mark3D) di-mount.
+   Sebelum gerbang membuka, 3D tidak di-mount demi menghemat WebGL context
+   dan menunda fetch GLB 2.8MB. */
+export default function Hero({ mulaiBackground = false, siap3D = false }) {
+  const [tema, setTema] = useState(bacaTema)
+  const [grafis] = useState(bacaSetelanGrafis)
+
+  useEffect(() => {
+    return amatiTema((t) => setTema(t || 'gelap'))
+  }, [])
   return (
     <section
       id="home"
@@ -23,102 +40,101 @@ export default function Hero({ mulaiBackground = false }) {
           absolute inset-0 z-0, pointer-events-none supaya drag logo 3D,
           klik CTA, dan hover tile tetap jalan normal di atasnya.
 
-          Dua instance, satu per tema. Bukan pakai state React: tema dipasang
-          di <html data-theme> sebelum React jalan (anti-flicker di
-          entries/index.html), jadi CSS yang memilih mana yang tampil lewat
-          .hero-latar-terang / .hero-latar-gelap. Tidak ada risiko desync.
-
-          Keduanya tetap ter-mount, tapi yang tersembunyi kena
-          display:none sehingga clientWidth 0 → canvas berhenti render
-          sendiri (IntersectionObserver + ResizeObserver di komponen). */}
+          Hanya SATU instance yang di-mount berdasarkan tema aktif
+          (memantau atribut data-theme via amatiTema). Hal ini mencegah
+          dua WebGL context hidup bersamaan di background. */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Latar hero light theme: canvas WebGL2 AcidSquares.
-            Settingan ini preferensi Bang Rob, JANGAN diubah tanpa izin.
-            Semua warna kertas (#f8fafc), gloss 0, grain 0, fade 0 —
-            tile lembut tanpa kilau, cuma bentuk dan kedalaman yang main. */}
-        <div className="hero-latar hero-latar-terang">
-          <AcidSquares
-            color="#f8fafc"
-            accentColor="#f8fafc"
-            secondaryColor="#f8fafc"
-            tileSize={0.55}
-            gap={0.05}
-            roundness={0.25}
-            softness={0.83}
-            bulge={0.42}
-            rotation={-22}
-            gloss={0}
-            waves={0.2}
-            waveScale={0.65}
-            speed={0.6}
-            shape="round"
-            pulse={0.5}
-            pulseSpeed={0.45}
-            pulseSpacing={1.9}
-            pulseWidth={1}
-            pulseOrigin="random"
-            lighting="overhead"
-            brightness={0.5}
-            tilt={0.81}
-            zoom={0.65}
-            depth={18.5}
-            grain={0}
-            fade={0}
-            opacity={1}
-            hoverEffect="lift"
-            mouseStrength={0.75}
-            mouseRadius={0.21}
-            detail="high"
-            mouseInteraction={true}
-            pulseOnClick={true}
-            intro={true}
-            mulaiIntro={mulaiBackground}
-          />
-        </div>
-
-        {/* Latar hero dark theme. Settingan preferensi Bang Rob, JANGAN diubah.
-            Warna turun jadi abu gelap (#7d7d7d / #4b4b4b / #0c0c0c), backlit,
-            bulge 0.83 dan brightness 0.8 supaya tile-nya kebaca di atas tinta.
-            Hover di-balik jadi "press" (tile masuk, bukan terangkat). */}
-        <div className="hero-latar hero-latar-gelap">
-          <AcidSquares
-            color="#7d7d7d"
-            accentColor="#4b4b4b"
-            secondaryColor="#0c0c0c"
-            tileSize={0.55}
-            gap={0.07}
-            roundness={0.25}
-            softness={0.83}
-            bulge={0.83}
-            rotation={-22}
-            gloss={0.04}
-            waves={0.25}
-            waveScale={0.65}
-            speed={0.6}
-            shape="round"
-            pulse={0.5}
-            pulseSpeed={0.8}
-            pulseSpacing={1.9}
-            pulseWidth={1}
-            pulseOrigin="random"
-            lighting="backlit"
-            brightness={0.8}
-            tilt={0.81}
-            zoom={0.65}
-            depth={18.5}
-            grain={0}
-            fade={0}
-            opacity={1}
-            hoverEffect="press"
-            mouseStrength={0.75}
-            mouseRadius={0.21}
-            detail="high"
-            mouseInteraction={true}
-            pulseOnClick={true}
-            intro={true}
-            mulaiIntro={mulaiBackground}
-          />
-        </div>
+        {tema === 'terang' ? (
+          /* Latar hero light theme: canvas WebGL2 AcidSquares.
+             Settingan ini preferensi Bang Rob, JANGAN diubah tanpa izin.
+             Semua warna kertas (#f8fafc), gloss 0, grain 0, fade 0 —
+             tile lembut tanpa kilau, cuma bentuk dan kedalaman yang main. */
+          <div className="hero-latar hero-latar-terang">
+            <AcidSquares
+              color="#f8fafc"
+              accentColor="#f8fafc"
+              secondaryColor="#f8fafc"
+              tileSize={0.55}
+              gap={0.05}
+              roundness={0.25}
+              softness={0.83}
+              bulge={0.42}
+              rotation={-22}
+              gloss={0}
+              waves={0.2}
+              waveScale={0.65}
+              speed={0.6}
+              shape="round"
+              pulse={0.5}
+              pulseSpeed={0.45}
+              pulseSpacing={1.9}
+              pulseWidth={1}
+              pulseOrigin="random"
+              lighting="overhead"
+              brightness={0.5}
+              tilt={0.81}
+              zoom={0.65}
+              depth={18.5}
+              grain={0}
+              fade={0}
+              opacity={1}
+              hoverEffect="lift"
+              mouseStrength={0.75}
+              mouseRadius={0.21}
+              detail={grafis.detail}
+              dpr={grafis.dpr}
+              mouseInteraction={true}
+              pulseOnClick={true}
+              intro={true}
+              mulaiIntro={mulaiBackground}
+            />
+          </div>
+        ) : (
+          /* Latar hero dark theme. Settingan preferensi Bang Rob, JANGAN diubah.
+             Warna turun jadi abu gelap (#7d7d7d / #4b4b4b / #0c0c0c), backlit,
+             bulge 0.83 dan brightness 0.8 supaya tile-nya kebaca di atas tinta.
+             Hover di-balik jadi "press" (tile masuk, bukan terangkat). */
+          <div className="hero-latar hero-latar-gelap">
+            <AcidSquares
+              color="#7d7d7d"
+              accentColor="#4b4b4b"
+              secondaryColor="#0c0c0c"
+              tileSize={0.55}
+              gap={0.07}
+              roundness={0.25}
+              softness={0.83}
+              bulge={0.83}
+              rotation={-22}
+              gloss={0.04}
+              waves={0.25}
+              waveScale={0.65}
+              speed={0.6}
+              shape="round"
+              pulse={0.5}
+              pulseSpeed={0.8}
+              pulseSpacing={1.9}
+              pulseWidth={1}
+              pulseOrigin="random"
+              lighting="backlit"
+              brightness={0.8}
+              tilt={0.81}
+              zoom={0.65}
+              depth={18.5}
+              grain={0}
+              fade={0}
+              opacity={1}
+              hoverEffect="press"
+              mouseStrength={0.75}
+              mouseRadius={0.21}
+              detail={grafis.detail}
+              dpr={grafis.dpr}
+              mouseInteraction={true}
+              pulseOnClick={true}
+              intro={true}
+              mulaiIntro={mulaiBackground}
+            />
+          </div>
+        )}
       </div>
 
       {/* Headline: SATU artwork SVG dari Bang Rob (viewBox 1084.25x368.65,
@@ -163,7 +179,13 @@ export default function Hero({ mulaiBackground = false }) {
       <div className="flex min-h-0 flex-1 items-center justify-center px-[2.5vw]">
         <div className="-translate-y-20 w-[min(260px,33svh)] sm:w-[min(480px,calc(100svh_-_9vw_-_210px))] md:w-[min(480px,calc(100svh_-_9vw_-_330px))] md:-translate-y-[30px] md:scale-[1.10] lg:w-[min(515px,calc(100svh_-_9vw_-_330px))]">
           <FadeIn delay={0.45} y={30}>
-            <Logo3D />
+            {siap3D ? (
+              <Suspense fallback={<div className="aspect-square w-full" aria-hidden="true" />}>
+                <Logo3D />
+              </Suspense>
+            ) : (
+              <div className="aspect-square w-full" aria-hidden="true" />
+            )}
           </FadeIn>
         </div>
       </div>
@@ -237,10 +259,18 @@ export default function Hero({ mulaiBackground = false }) {
               </TiltTombol>
             </div>
             <div className="hero-cta-indeep">
-              <Mark3D sumber="/images/logo-indeep-3d.glb" label="Logo InDeep tiga dimensi" />
+              {siap3D && (
+                <Suspense fallback={null}>
+                  <Mark3D sumber="/images/logo-indeep-3d.glb" label="Logo InDeep tiga dimensi" />
+                </Suspense>
+              )}
             </div>
             <div className="hero-cta-ibbor">
-              <Mark3D sumber="/images/logo-ibborarts-3d.glb" label="Logo Ibborarts tiga dimensi" />
+              {siap3D && (
+                <Suspense fallback={null}>
+                  <Mark3D sumber="/images/logo-ibborarts-3d.glb" label="Logo Ibborarts tiga dimensi" />
+                </Suspense>
+              )}
             </div>
           </div>
         </FadeIn>

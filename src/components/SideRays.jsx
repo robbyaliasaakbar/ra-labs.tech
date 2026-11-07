@@ -285,10 +285,13 @@ const SideRays = ({
       const rect = container.getBoundingClientRect();
       const cssWidth = Math.max(1, rect.width);
       const cssHeight = Math.max(1, rect.height);
+      const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches ?? false;
+      const budget = isCoarse ? 1.2e6 : PIXEL_BUDGET;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const ratio = Math.min(
-        window.devicePixelRatio || 1,
+        dpr,
         s.maxRatio,
-        Math.sqrt(PIXEL_BUDGET / (cssWidth * cssHeight))
+        Math.sqrt(budget / (cssWidth * cssHeight))
       );
       const width = Math.max(1, Math.round(cssWidth * ratio));
       const height = Math.max(1, Math.round(cssHeight * ratio));
@@ -443,6 +446,12 @@ const SideRays = ({
       if (!gl.isContextLost()) {
         gl.deleteVertexArray(vao);
         gl.deleteProgram(shader.program);
+        try {
+          const loseExt = gl.getExtension('WEBGL_lose_context');
+          loseExt?.loseContext();
+        } catch {
+          // Abaikan jika browser tidak mendukung
+        }
       }
     };
   }, [generation]);

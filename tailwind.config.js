@@ -17,11 +17,7 @@ export default {
         lawanTeks: 'var(--lawan-teks)',
       },
       fontFamily: {
-        /* Headline hero: Sora ExtraBold (800), geometris teknis.
-           Sesuai plan-prd/Headline/spec.md (font utama Sora).
-           Montserrat cadangan kalau Sora gagal. Font lain tetap Comfortaa + JetBrains Mono. */
-        headline: ['Sora', 'Montserrat', 'ui-rounded', 'system-ui', 'sans-serif'],
-        /* Manrope khusus judul tebal; sisanya tetap Comfortaa + JetBrains Mono. */
+        /* Manrope khusus judul tebal (headline / heading); sisanya tetap Comfortaa + JetBrains Mono. */
         heading: ['Manrope', 'Comfortaa', 'ui-rounded', 'system-ui', 'sans-serif'],
         /* Copy paragraf About: Montserrat 400. Tombol tetap Comfortaa (font-sans). */
         copy: ['Montserrat', 'ui-rounded', 'system-ui', 'sans-serif'],

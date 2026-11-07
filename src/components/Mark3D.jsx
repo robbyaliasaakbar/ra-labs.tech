@@ -30,7 +30,7 @@ export default function Mark3D({ sumber, label }) {
 
     let renderer
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true })
     } catch {
       return undefined
     }
@@ -78,14 +78,13 @@ export default function Mark3D({ sumber, label }) {
     kontrol.minPolarAngle = POLAR_MIN
     kontrol.maxPolarAngle = POLAR_MAX
     kontrol.target.set(0, 0, 0)
-    kontrol.autoRotate = !kurangiGerak
+    kontrol.autoRotate = false
     kontrol.autoRotateSpeed = 0.9
     renderer.domElement.style.touchAction = 'none'
     renderer.domElement.style.cursor = 'grab'
 
     /* ---- Balik ke lurus depan ----
-       Lepas drag: kamera pelan-pelan balik ke KAMERA_AWAL, lalu spin
-       dinyalakan lagi. Cara persis yang dipakai Logo3D.jsx. */
+       Lepas drag: kamera pelan-pelan balik ke KAMERA_AWAL. */
     const motor = {
       aktif: false,
       mulai: 0,
@@ -116,6 +115,8 @@ export default function Mark3D({ sumber, label }) {
       motor.deltaPhi = motor.ke.phi - motor.dari.phi
     }
 
+    let sedangHover = false
+
     // Di-render tiap frame SETELAH kontrol.update(), supaya nilainya yang
     // menang terakhir.
     const majuKembali = () => {
@@ -132,10 +133,22 @@ export default function Mark3D({ sumber, label }) {
         return
       }
 
-      // Selesai: posisi dikunci di KAMERA_AWAL, lalu spin jalan lagi.
+      // Selesai: posisi dikunci di KAMERA_AWAL.
       kamera.position.copy(KAMERA_AWAL)
       motor.aktif = false
-      kontrol.autoRotate = true
+      if (sedangHover) {
+        kontrol.autoRotate = !kurangiGerak
+      }
+    }
+
+    let frame = 0
+    let hidup = true
+    let terlihat = true
+
+    const bangun = () => {
+      if (!frame && hidup && terlihat) {
+        frame = requestAnimationFrame(gambar)
+      }
     }
 
     const saatMulai = () => {
@@ -144,18 +157,39 @@ export default function Mark3D({ sumber, label }) {
       // Sedang balik ke depan lalu user drag lagi: baliknya dihentikan,
       // user yang pegang kendali.
       motor.aktif = false
+      bangun()
     }
     const saatSelesai = () => {
       renderer.domElement.style.cursor = 'grab'
       if (kurangiGerak) {
         // Gerak dimatikan: langsung lurus depan, tanpa animasi.
         kamera.position.copy(KAMERA_AWAL)
+        pusatkanFrustum()
+        renderer.render(scene, kamera)
         return
       }
       mulaiKembali()
+      bangun()
     }
     kontrol.addEventListener('start', saatMulai)
     kontrol.addEventListener('end', saatSelesai)
+    kontrol.addEventListener('change', bangun)
+
+    const saatMasuk = () => {
+      sedangHover = true
+      kontrol.autoRotate = !kurangiGerak
+      bangun()
+    }
+    const saatKeluar = () => {
+      sedangHover = false
+      kontrol.autoRotate = false
+      if (!kurangiGerak) {
+        mulaiKembali()
+        bangun()
+      }
+    }
+    wadah.addEventListener('pointerenter', saatMasuk)
+    wadah.addEventListener('pointerleave', saatKeluar)
 
     const titikUji = new THREE.Vector3()
 
@@ -179,21 +213,24 @@ export default function Mark3D({ sumber, label }) {
       kamera.updateProjectionMatrix()
     }
 
-    let frame = 0
-    let hidup = true
-    let terlihat = true
-
     const gambar = () => {
       if (!hidup) return
       if (!terlihat) {
         frame = 0
         return
       }
-      kontrol.update()
+      const kontrolBergerak = kontrol.update()
       majuKembali()
       pusatkanFrustum()
       renderer.render(scene, kamera)
-      frame = requestAnimationFrame(gambar)
+
+      // Idle pause: render loop hanya jalan jika ada interaksi/animasi aktif (Issue #9)
+      const butuhRender = sedangHover || motor.aktif || kontrolBergerak
+      if (butuhRender) {
+        frame = requestAnimationFrame(gambar)
+      } else {
+        frame = 0
+      }
     }
 
     const loader = buatLoaderGLTF()
@@ -280,6 +317,8 @@ export default function Mark3D({ sumber, label }) {
       if (!sisi) return
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
       renderer.setSize(sisi, sisi, false)
+      pusatkanFrustum()
+      renderer.render(scene, kamera)
     }
     const pengawasUkuran = new ResizeObserver(ukurUlang)
     pengawasUkuran.observe(wadah)
@@ -287,7 +326,11 @@ export default function Mark3D({ sumber, label }) {
 
     const pengawasTerlihat = new IntersectionObserver(([entri]) => {
       terlihat = entri.isIntersecting
-      if (terlihat && !frame && hidup) gambar()
+      if (terlihat && hidup) {
+        pusatkanFrustum()
+        renderer.render(scene, kamera)
+        if (sedangHover || motor.aktif) bangun()
+      }
     })
     pengawasTerlihat.observe(wadah)
 
@@ -296,9 +339,17 @@ export default function Mark3D({ sumber, label }) {
       cancelAnimationFrame(frame)
       pengawasUkuran.disconnect()
       pengawasTerlihat.disconnect()
+      wadah.removeEventListener('pointerenter', saatMasuk)
+      wadah.removeEventListener('pointerleave', saatKeluar)
+      kontrol.removeEventListener('change', bangun)
       kontrol.removeEventListener('start', saatMulai)
       kontrol.removeEventListener('end', saatSelesai)
       kontrol.dispose()
+      try {
+        renderer.forceContextLoss()
+      } catch {
+        // Abaikan jika context sudah dilepas
+      }
       renderer.dispose()
       scene.traverse((obj) => {
         obj.geometry?.dispose()
