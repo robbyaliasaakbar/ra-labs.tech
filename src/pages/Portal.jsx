@@ -57,8 +57,10 @@ export default function Portal() {
           {/* Latar hero animasi pembukanya diulang pas gerbang mulai larut
               (state membuka). Kalau tidak, reveal-nya sudah kelar di
               belakang gerbang dan pengunjung cuma lihat latar yang sudah
-              jadi waktu gerbang kebuka. */}
-          <Hero mulaiBackground={membuka} />
+              jadi waktu gerbang kebuka. Model 3D hero (Logo3D & Mark3D)
+              di-lazy mount sampai gerbang mulai membuka (siap3D) agar
+              tidak membebani WebGL context dan mengunduh GLB di detik 0. */}
+          <Hero mulaiBackground={membuka} siap3D={membuka || gerbangTerbuka} />
           {(membuka || gerbangTerbuka) && <About />}
           {/* Collection mandiri dengan panggung showcase & studio ledger canvas */}
           <div className="latar-bengkel-collection relative">

@@ -1574,3 +1574,54 @@ Format entri:
   - Layout: responsif di 360, 768, 1280 tanpa horizontal scrollbar
   - Tombol & link: semua anchor dan interaksi kartu tetap responsif
 
+
+## 08 Nov 2026, Batch 25: audit performa #1-#11 (WebGL context, GLB, chunking, idle render, aset)
+
+- Tanggal: 08 Nov 2026
+- Judul: bereskan issue performa #1 sampai #11 — turunkan WebGL context, tunda GLB, pisahkan bundle, hentikan render idle, dan rampingkan aset
+- File yang berubah:
+  - Baru: `src/lib/perangkat.js` (deteksi device lemah: pointer coarse + hardwareConcurrency)
+  - Baru: `public/images/gradient-abstract.webp` (114 KB, ganti SVG 7.4 MB)
+  - Ubah: `src/components/Hero.jsx` (lazy-mount Logo3D/Mark3D lewat `siap3D`, AcidSquares kondisional per tema, `detail`/`dpr` adaptif)
+  - Ubah: `src/pages/Portal.jsx` (oper `siap3D={membuka || gerbangTerbuka}` ke Hero)
+  - Ubah: `src/components/AcidSquares.jsx` (`antialias: false`)
+  - Ubah: `src/components/Mark3D.jsx` (`antialias: false`, idle-pause loop, hover-driven spin, `forceContextLoss` saat unmount)
+  - Ubah: `src/components/LogoGerbang.jsx` (`forceContextLoss` saat dispose)
+  - Ubah: `src/components/SideRays.jsx` (budget pixel 1.2e6 untuk pointer coarse, cap DPR 2, `WEBGL_lose_context` saat dispose)
+  - Ubah: `src/styles/global.css` (`.kertas-lecek-overlay` → `.webp`)
+  - Ubah: `entries/index.html` (hapus font Sora, preload `Dark-headline1x.svg`)
+  - Ubah: `tailwind.config.js` (hapus family `headline`/Sora)
+  - Ubah: `vite.config.js` (`manualChunks`: vendor-three / vendor-motion / vendor-react)
+  - Hapus: `src/components/Kubus.jsx` (orphan)
+  - Hapus: `images/gradient-abstract.svg` + `public/images/gradient-abstract.svg` (diganti WebP)
+  - Hasil build dicopy ke root: `index.html`, `assets/`, `images/`
+- Yang dikerjakan:
+  1. **#1 — 7 WebGL context → 3 saat gerbang menutup.** Hero dulu me-mount dua AcidSquares (terang + gelap) sekaligus dan Logo3D + dua Mark3D sejak detik 0. Sekarang AcidSquares hanya SATU instance sesuai `data-theme` (dipantau lewat `amatiTema`), dan Logo3D/Mark3D baru di-mount saat `siap3D` (gerbang mulai membuka). `LogoGerbang` dan `SideRays` juga sekarang melepas context (`forceContextLoss` / `WEBGL_lose_context`) saat unmount, bukan cuma `dispose()`
+  2. **#2 — beban AcidSquares turun di device lemah.** `detail` dan `dpr` tidak lagi hardcode `high` + DPR 2. `src/lib/perangkat.js` memilih `detail` (`medium`/`low`) dan cap DPR 1.25 untuk device sentuh / core ≤ 4 / reduced-motion. Setelan warna, bulge, pulse, dan hover TIDAK diubah sama sekali — hanya `detail` dan `dpr` yang adaptif
+  3. **#3 — GLB 2.8 MB tidak lagi diunduh di detik 0.** Karena Logo3D/Mark3D lazy-mount, GLB hero hanya diminta setelah gerbang mulai membuka. Saat gerbang menutup hanya `logo-ralabs-3d.glb` (milik gerbang) yang diunduh
+  4. **#4 — bundle 1.1 MB satu chunk dipecah.** `manualChunks` memisahkan `vendor-three` (602 KB), `vendor-motion` (150 KB), `vendor-react` (188 KB), dan `main` turun jadi 127 KB. Logo3D/Mark3D juga di-`React.lazy`. `Kubus.jsx` dihapus
+  5. **#5 — font Sora dibuang.** `Sora:wght@800` dihapus dari URL font dan dari `tailwind.config.js` (family `headline` tidak pernah dipakai). `Comfortaa` diubah dari `300..700` ke `400..700` (weight 300 tidak dipakai; 500 dipakai di Hero pernyataan)
+  6. **#6 — gradient 7.4 MB → WebP 114 KB.** `.kertas-lecek-overlay` sekarang menunjuk `gradient-abstract.webp`. SVG lama dihapus dari root dan `public/`. Turun ~98.5%, hanya terunduh saat tema terang
+  7. **#7 — antialias dimatikan di tempat yang tidak perlu.** `AcidSquares` (shader fullscreen) dan `Mark3D` (mark kecil) → `antialias: false`. `Logo3D` dan `LogoGerbang` tetap `true` karena tepi logo besar terlihat
+  8. **#8 — LCP headline di-preload.** `<link rel="preload" as="image" href="/images/Dark-headline1x.svg" fetchpriority="high">` ditambahkan. Hanya versi gelap (tema default)
+  9. **#9 — Mark3D berhenti render saat idle.** Loop hanya jalan saat hover, drag, atau animasi balik ke depan. Saat diam, frame di-`cancel` dan canvas di-render sekali terakhir. `autoRotate` tidak lagi menyala terus
+  10. **#10 — SideRays lebih ringan di layar kecil.** `PIXEL_BUDGET` turun ke `1.2e6` untuk `pointer: coarse`, DPR di-cap 2, dan context dilepas saat unmount
+  11. **#11 — deteksi device lemah.** `src/lib/perangkat.js` dipakai Hero untuk memilih `detail` + `dpr`. Tidak memakai `navigator.deviceMemory` (tidak ada di Safari)
+- Hasil tes:
+  - `npm run build` sukses (4.79 dtk). Chunk: `main` 127 KB, `vendor-three` 602 KB (gzip 157 KB), `vendor-motion` 150 KB, `vendor-react` 188 KB, `Logo3D` 5.1 KB, `Mark3D` 5.2 KB
+  - Cek bundle: semua path `/assets/*` di `index.html` root benar-benar ada (script `contributing.md`) → semua `OK`
+  - Cek aset CSS: satu-satunya `url(/...)` di CSS build adalah `/images/gradient-abstract.webp` → ada di root
+  - Tes browser (Chrome headless via CDP, build root diserve `python3 -m http.server 8099`):
+    - **Saat gerbang menutup: 3 canvas** (AcidSquares, SideRays, canvas logo gerbang). Sebelumnya 7
+    - **`.glb` yang diminta saat gerbang menutup: hanya `logo-ralabs-3d.glb`**. Setelah gerbang terbuka total 3 GLB (ralabs, indeep, ibborarts) — sesuai harapan
+    - **Setelah gerbang terbuka: 4 canvas** (1 AcidSquares + Logo3D + 2 Mark3D), gerbang sudah lepas, 2 `.mark-3d` ter-render
+    - **Tukar tema (gelap → terang): `acidCanvas` tetap 1**, `.hero-latar` berganti dari `-gelap` ke `-terang` tanpa dobel instance
+    - Console bersih di semua skenario (tidak ada error/exception)
+- Catatan jujur:
+  - **`vendor-three` masih di-`modulepreload` di awal** karena `LogoGerbang` butuh three.js di layar pertama. Ini disengaja (issue #10: "LogoGerbang jangan di-lazy"). Yang berkurang adalah GLB hero dan bundle non-three, bukan three itu sendiri
+  - **Belum diukur dengan Lighthouse** (skor LCP/TBT sebelum-sesudah). Bukti yang ada adalah jumlah context, byte chunk, dan console bersih — bukan skor
+  - **Belum dites di HP fisik.** Setelan `detail`/`dpr` adaptif memakai emulasi `pointer: coarse` + `hardwareConcurrency`; efek termal/baterai belum diukur
+  - **`Comfortaa:wght@400..700` masih variable range**, belum dipecah jadi dua weight statis seperti opsi di issue #5. Weight 500 memang dipakai, jadi range 400–700 dipertahankan
+  - **Manrope masih dipakai sebagai heading** (issue #5 poin 3). Belum diputuskan apakah balik ke Comfortaa
+  - **`public/images/` dan root `images/` masih dobel** (issue #20 / backup #26). Sengaja tidak disentuh di batch performa ini
+  - **`plan-prd/` masih di-gitignore**, tidak ikut PR

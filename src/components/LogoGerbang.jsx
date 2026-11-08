@@ -495,6 +495,11 @@ export default function LogoGerbang({
       kontrol.removeEventListener('start', saatMulai)
       kontrol.removeEventListener('end', saatSelesai)
       kontrol.dispose()
+      try {
+        renderer.forceContextLoss()
+      } catch {
+        // Abaikan jika context sudah hilang sebelumnya
+      }
       renderer.dispose()
       scene.traverse((obj) => {
         obj.geometry?.dispose()

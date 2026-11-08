@@ -561,7 +561,7 @@ const AcidSquares = ({
     const gl = canvas?.getContext('webgl2', {
       alpha: true,
       premultipliedAlpha: true,
-      antialias: true,
+      antialias: false,
       depth: true,
       stencil: false
     });
