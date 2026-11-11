@@ -1,9 +1,67 @@
 # www.ra-labs.tech wajib 301 ke apex, biar Google cuma kenal satu rumah.
 # Tanpa ini www menyajikan isi sama tanpa redirect = duplikat konten.
 RewriteEngine On
+
 RewriteCond %{HTTP_HOST} ^www\.ra-labs\.tech$ [NC]
 RewriteRule ^(.*)$ https://ra-labs.tech/$1 [R=301,L]
 
 # Tanpa baris ini, Hostinger menampilkan template 404 bawaan mereka,
 # bukan 404.html milik portal. Status tetap 404, hanya tampilannya yang salah.
 ErrorDocument 404 /404.html
+
+# ============================================================================
+# SPA FALLBACK (Issue #14) -- DAFTAR ROUTE, BUKAN WILDCARD
+# ============================================================================
+#
+# MASALAH YANG DICEGAH
+# src/App.jsx memakai BrowserRouter. Begitu ada halaman kedua (misal
+# /collection), reload atau buka langsung URL itu akan membuat Apache mencari
+# file bernama "collection" di disk. File itu tidak ada -> 404.html, padahal
+# route-nya sah.
+#
+# KENAPA BUKAN `RewriteRule ^ index.html`
+# Pola wildcard menyelesaikan masalah di atas, tapi menciptakan masalah baru:
+# SEMUA URL ngawur ikut dilayani index.html dengan status 200. Hasilnya
+# soft-404 -- Google melihat halaman valid, pengunjung melihat portal, dan
+# 404.html tidak pernah muncul. Pola di bawah hanya melayani route yang
+# benar-benar terdaftar, jadi URL ngawur tetap 404 asli.
+#
+# CARA MENAMBAH ROUTE BARU (wajib, jangan dilewat)
+# 1. Tambah satu blok di bagian "ROUTE AKTIF" di bawah, contoh:
+#
+#      RewriteCond %{REQUEST_FILENAME} !-f
+#      RewriteCond %{REQUEST_FILENAME} !-d
+#      RewriteRule ^collection(/.*)?$ index.html [L]
+#
+#    Penjelasan pola: ^collection(/.*)?$ melayani /collection, /collection/,
+#    dan /collection/apa-saja. Jangan lupa tanda $ di akhir.
+# 2. Pastikan route-nya juga terdaftar di src/App.jsx.
+# 3. Tambah URL-nya ke sitemap.xml.
+# 4. Uji di server: /collection harus tampil halaman, /route-ngawur harus
+#    tetap tampil 404.html dengan status 404.
+#
+# Dua RewriteCond di setiap blok artinya: hanya rewrite kalau di disk TIDAK
+# ada file dan TIDAK ada folder dengan nama itu. Jadi aset nyata
+# (/images/..., /assets/...) tidak pernah ikut di-rewrite.
+#
+# ---------------------------------------------------------------------------
+# ROUTE AKTIF
+# ---------------------------------------------------------------------------
+# Sengaja kosong. Per 12 Nov 2026 portal hanya punya satu route ("/") dan
+# navigasi antar section memakai anchor #section, bukan URL terpisah. Jadi
+# belum ada route yang perlu di-fallback-kan.
+#
+# Jangan hapus blok ini. Begitu route kedua ditambahkan, di sinilah tempatnya.
+# Kalau kosong dan route kedua lupa didaftarkan, gejalanya: halaman tampil
+# normal saat diklik dari navbar, tapi 404.html muncul saat di-reload (F5).
+#
+# ---------------------------------------------------------------------------
+# CATATAN UNTUK PEMELIHARA
+# ---------------------------------------------------------------------------
+# RewriteRule di .htaccess berlaku setelah mod_rewrite mengeksekusi semua
+# aturan lain, dan [L] menghentikan proses aturan. Karena itu aturan www di
+# atas tetap menang lebih dulu dan tidak terpengaruh blok ini.
+#
+# Jangan menambahkan `Options -MultiViews` tanpa memastikan AllowOverride
+# Hostinger mengizinkan directive Options. Kalau tidak diizinkan, satu baris
+# itu membuat SELURUH situs 500, bukan cuma route-nya.
