@@ -1625,3 +1625,28 @@ Format entri:
   - **Manrope masih dipakai sebagai heading** (issue #5 poin 3). Belum diputuskan apakah balik ke Comfortaa
   - **`public/images/` dan root `images/` masih dobel** (issue #20 / backup #26). Sengaja tidak disentuh di batch performa ini
   - **`plan-prd/` masih di-gitignore**, tidak ikut PR
+
+## 12 Nov 2026, Batch 26: SPA fallback per-route di .htaccess (#14)
+
+- Tanggal: 12 Nov 2026
+- Judul: fix #14 — siapkan SPA fallback untuk BrowserRouter tanpa mengorbankan 404 asli
+- File yang berubah:
+  - Ubah: `.htaccess` (blok `SPA FALLBACK` + bagian `ROUTE AKTIF` yang masih kosong)
+  - Ubah: `contributing.md` (bagian "Menambah halaman / route baru" + satu baris checklist PR)
+  - Ubah: `engineering.md` (entri ini)
+- Yang dikerjakan:
+  1. **Masalah aslinya dikonfirmasi ulang.** `.htaccess` hanya punya redirect www + `ErrorDocument`. `src/App.jsx` memakai `BrowserRouter`. Begitu ada route kedua, reload di URL itu akan menabrak disk, tidak ketemu file, lalu jatuh ke `404.html` padahal route-nya sah
+  2. **Pilihan desain: fallback per-route, bukan wildcard.** `RewriteRule ^ index.html` ditolak karena melayani SEMUA URL ngawur dengan status 200 (soft-404). Akibatnya `ErrorDocument 404` tidak pernah tampil, Google menganggap URL ngawur sebagai halaman valid, dan `404.html` jadi mati. Yang dipasang adalah pola `RewriteCond !-f` + `!-d` + `RewriteRule ^<route>(/.*)?$ index.html [L]` per route
+  3. **Bagian `ROUTE AKTIF` sengaja kosong.** Per hari ini portal hanya punya satu route (`/`) dan navigasi antar section memakai anchor `#section`, bukan URL terpisah. Jadi belum ada route yang butuh fallback. Yang dibuat sekarang adalah mekanisme + dokumentasinya, supaya route kedua tidak lagi menabrak keputusan mendadak
+  4. **Cara menambah route ditulis di dua tempat.** Di komentar `.htaccess` (untuk yang langsung menyentuh file itu) dan di `contributing.md` (untuk alur kerja PR). Empat langkah: daftarkan di `App.jsx`, daftarkan pola di `.htaccess`, tambah ke `sitemap.xml`, uji di server
+  5. **Aturan `Options -MultiViews` sengaja TIDAK ditambahkan.** Kalau AllowOverride Hostinger tidak mengizinkan directive `Options`, satu baris itu membuat seluruh situs 500 — bukan cuma route-nya. Risiko tidak sepadan karena `MultiViews` tidak mengganggu pola `^route$` yang berakhiran `$`
+- Hasil tes:
+  - Sintaks: tidak ada tool Apache lokal (`apache2`/`httpd` tidak terpasang, `sudo` tidak tersedia), jadi `.htaccess` **belum** divalidasi Apache. Yang bisa dilakukan hanya review manual: urutan aturan, `[L]`, dan pola regex
+  - `RewriteCond %{REQUEST_FILENAME} !-f` / `!-d` dipastikan ada di setiap blok, supaya `/images/*` dan `/assets/*` tidak pernah ikut di-rewrite
+  - Blok `ROUTE AKTIF` kosong, jadi perilaku situs **tidak berubah sama sekali** dibanding sebelum PR ini
+  - Bundle root tidak disentuh: tidak ada perubahan `src/`, jadi `index.html` dan `assets/` tidak perlu di-build ulang
+- Catatan jujur:
+  - **Belum dites di Apache sungguhan.** Verifikasi akhir harus di Hostinger setelah merge: buka `/route-ngawur`, pastikan tampil `404.html` dengan status **404**, bukan 200
+  - **Dev server tidak bisa dipakai memverifikasi 404.** Vite membalas 200 untuk URL apa pun, jadi perilaku 404 hanya terlihat di Apache
+  - **Mekanisme ini belum "aktif" hari ini.** Nilainya baru terasa saat route kedua ditambahkan. Kalau langkah 2 (daftar di `.htaccess`) dilewat, gejalanya: halaman normal saat diklik dari navbar, tapi `404.html` muncul saat di-refresh
+  - Issue #11 (deteksi device lemah) **sudah selesai** di Batch 25 lewat `src/lib/perangkat.js`, tapi issue-nya masih open. Perlu ditutup terpisah, bukan dikerjakan ulang

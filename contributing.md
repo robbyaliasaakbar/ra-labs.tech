@@ -232,6 +232,34 @@ Wajib ada, dan harus jujur:
 - Tidak ada tombol atau link tanpa tujuan. Kalau belum jadi, tulis "Coming Soon", jangan dikasih link mati.
 - **Jangan** `npm run build` lalu commit tanpa pernah cek hasil build-nya di browser.
 
+### Menambah halaman / route baru
+
+`src/App.jsx` memakai `BrowserRouter`. Artinya URL seperti `/collection` **tidak punya file di disk** — yang ada cuma `index.html`. Kalau tidak didaftarkan, reload di URL itu akan menampilkan `404.html` padahal route-nya sah.
+
+Karena itu, setiap route baru wajib melewati empat langkah ini:
+
+1. **Daftarkan route di `src/App.jsx`.**
+2. **Daftarkan pola URL-nya di `.htaccess`**, di bagian `ROUTE AKTIF`:
+
+   ```apache
+   RewriteCond %{REQUEST_FILENAME} !-f
+   RewriteCond %{REQUEST_FILENAME} !-d
+   RewriteRule ^collection(/.*)?$ index.html [L]
+   ```
+
+3. **Tambahkan URL-nya ke `public/sitemap.xml`.**
+4. **Uji di server sungguhan** (bukan dev server — lihat catatan di bawah):
+   - `/collection` → tampil halaman, status 200.
+   - `/route-ngawur` → tampil `404.html`, status **404**.
+
+#### Jangan pakai wildcard `RewriteRule ^ index.html`
+
+Pola itu memang membuat semua route jalan, tapi sekaligus melayani **semua** URL ngawur dengan status 200. Hasilnya soft-404: Google menganggap halaman itu valid, pengunjung tidak pernah melihat `404.html`, dan `ErrorDocument` jadi mati. Pola per-route di atas menjaga 404 tetap jujur.
+
+#### Kenapa tidak bisa dites di dev server
+
+Dev server Vite menyajikan `index.html` untuk URL apa pun. `/apa-saja` akan balas **200** dan tidak pernah menampilkan `404.html`, jadi perilaku 404 tidak bisa diverifikasi di port 5015. Uji di build yang diserve Apache, atau langsung di Hostinger setelah merge.
+
 ### Bagian yang tidak boleh disentuh
 
 - `src/components/Logo3D.jsx` — milik hero. Gerbang pakai file sendiri (`LogoGerbang.jsx`).
@@ -282,6 +310,7 @@ Kalau ide butuh salah satu di atas, taruh di subdomain sendiri yang hostingnya m
 - [ ] Layout 360 / 768 / 1280 tanpa scroll horizontal
 - [ ] Kontras teks lolos
 - [ ] Semua tombol dan link ditekan, tidak ada yang mati
+- [ ] Kalau menambah route baru: sudah terdaftar di `src/App.jsx`, `.htaccess` (bagian `ROUTE AKTIF`), dan `sitemap.xml`
 - [ ] `engineering.md` sudah diisi
 - [ ] Yang masuk commit hanya file relevan (cek `git status`)
 - [ ] Branch sudah di-push, PR sudah dibuka, URL dikirim ke Bang Rob
