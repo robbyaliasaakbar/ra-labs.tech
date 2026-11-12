@@ -46,7 +46,7 @@ Tailwind di-wire lewat `postcss.config.js`, konfigurasi tema ada di `tailwind.co
 
 - Format: WebP, disimpan di `public/images/` (otomatis tercopy ke `dist/images/`).
 - Satu aset 3D: `logo-ralabs-3d.glb`, dimuat runtime lewat `GLTFLoader`.
-- Logo, `og-banner.webp`, favicon, `mascot-enjoy.svg`: semua ada di `public/images/`, tidak ada referensi ke folder `../assets/` di luar repo.
+- Logo, `og-banner.webp`, favicon: semua ada di `public/images/`, tidak ada referensi ke folder `../assets/` di luar repo.
 
 ### SEO dan metadata
 
@@ -106,7 +106,7 @@ Kalau nanti perlu backend, di shared hosting ini hanya PHP 8.3 native dan MySQL.
 
 ## Aset
 
-Berkas logo, `og-banner.webp`, dan `mascot-enjoy.svg` ada di `public/images/`. Folder `../assets/` di luar repo hanya referensi; code tidak menunjuk ke sana.
+Berkas logo dan `og-banner.webp` ada di `public/images/`. Folder `../assets/` di luar repo hanya referensi; code tidak menunjuk ke sana.
 
 ## Lisensi
 

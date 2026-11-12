@@ -100,20 +100,6 @@ html[data-theme='gelap'] {
 }
 
 @layer components {
-  /* Judul memakai clamp, bukan ukuran pixel yang sama dari ponsel sampai desktop. */
-  .judul-besar {
-    font-size: clamp(1.9rem, 4.4vw, 3.6rem);
-    line-height: 1.12;
-  }
-
-  /* Copy hero: satu blok statement, tidak berteriak. */
-  .judul-hero {
-    max-width: 54ch;
-    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
-    font-weight: 500;
-    line-height: 1.4;
-  }
-
   .judul-bagian {
     font-size: clamp(1.5rem, 2.8vw, 2.4rem);
     line-height: 1.15;
@@ -232,12 +218,6 @@ html[data-theme='gelap'] {
       border-color: var(--merah);
       color: var(--kertas);
     }
-  }
-
-  /* Tautan teks biasa: warna teks bidang, bukan merah. */
-  .tautan-teks {
-    @apply underline decoration-1 underline-offset-4;
-    overflow-wrap: anywhere;
   }
 }
 
@@ -847,8 +827,7 @@ html[data-theme='gelap'] .latar-bengkel-about {
 }
 
 /* ---- Latar Bengkel: Collection (Mandiri - Studio Paper Canvas) ---- */
-.latar-bengkel-collection,
-.latar-bengkel-koleksi-kontak {
+.latar-bengkel-collection {
   /* Di tema terang: kertas studio (#f1f5f9) 1 notch lebih sejuk dari kertas About (#f8fafc) */
   background-color: #f1f5f9;
   position: relative;
@@ -872,8 +851,7 @@ html[data-theme='gelap'] .kertas-lecek-overlay {
   display: none;
 }
 
-html[data-theme='gelap'] .latar-bengkel-collection,
-html[data-theme='gelap'] .latar-bengkel-koleksi-kontak {
+html[data-theme='gelap'] .latar-bengkel-collection {
   /* Diganti ke deep graphite/charcoal hangat (#121316), bukan hitam pekat mati */
   background-color: #121316;
   background-image: none;
