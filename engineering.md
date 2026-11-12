@@ -1650,3 +1650,41 @@ Format entri:
   - **Dev server tidak bisa dipakai memverifikasi 404.** Vite membalas 200 untuk URL apa pun, jadi perilaku 404 hanya terlihat di Apache
   - **Mekanisme ini belum "aktif" hari ini.** Nilainya baru terasa saat route kedua ditambahkan. Kalau langkah 2 (daftar di `.htaccess`) dilewat, gejalanya: halaman normal saat diklik dari navbar, tapi `404.html` muncul saat di-refresh
   - Issue #11 (deteksi device lemah) **sudah selesai** di Batch 25 lewat `src/lib/perangkat.js`, tapi issue-nya masih open. Perlu ditutup terpisah, bukan dikerjakan ulang
+
+## 12 Nov 2026, Batch 27: bersih-bersih repo (#12, #16, #18, #21, #22) + cache-control HTML
+
+- Tanggal: 12 Nov 2026
+- Judul: bersihkan CSS orphan, dead asset, komentar usang, dan tambal celah cache HTML yang ditemukan saat review production
+- File yang berubah:
+  - Ubah: `.htaccess` (blok `CACHE HEADER UNTUK HTML`)
+  - Ubah: `src/styles/global.css` (hapus 4 kelas orphan)
+  - Ubah: `src/components/Footer.jsx` (komentar `KANAL`)
+  - Ubah: `public/404.html` (komentar sumber kebenaran)
+  - Ubah: `contributing.md` (langkah 13 kebersihan branch + checklist)
+  - Ubah: `README.md` (hapus sebutan `mascot-enjoy.svg`)
+  - Hapus: `images/` + `public/images/` → `banner-logo.webp`, `logo-text.webp`, `mascot-enjoy.svg` (6 file)
+  - Hasil build dicopy ke root: `index.html`, `assets/`, `images/`, `404.html`, `robots.txt`, `sitemap.xml`, `humans.txt`
+- Yang dikerjakan:
+  1. **Temuan baru dari review production — HTML tanpa Cache-Control.** `curl -I https://ra-labs.tech/` hanya mengembalikan `ETag` dan `Last-Modified`, tanpa `Cache-Control`. Browser bebas memakai heuristic caching, sehingga setelah deploy berikutnya `index.html` lama bisa dipakai dan menunjuk bundle hash yang sudah dihapus → halaman putih. Ditambahkan `<FilesMatch "\.html$">` + `Header set Cache-Control "no-cache, must-revalidate"` di dalam `<IfModule mod_headers.c>`. Dipilih `no-cache` (revalidasi, biasanya 304 tanpa body) bukan `no-store` (unduh ulang penuh). Aset ber-hash di `/assets/` tidak disentuh karena justru harus di-cache lama
+  2. **#16 — 4 kelas CSS orphan dihapus.** `.judul-besar`, `.judul-hero`, `.tautan-teks`, dan `.latar-bengkel-koleksi-kontak`. Yang terakhir digabung dalam selector bersama `.latar-bengkel-collection` di dua tempat (blok terang baris 850 dan blok gelap baris 876), jadi penghapusan dilakukan per-selector dan `.latar-bengkel-collection` dipastikan tetap utuh
+  3. **#18 — 3 dead asset dihapus dari dua lokasi.** `banner-logo.webp` (19.9 KB), `logo-text.webp` (7.6 KB), `mascot-enjoy.svg` (56.2 KB) → total 83.7 KB × 2 lokasi. `logo-ralabs-3d.glb` tidak disentuh karena path-nya dibentuk lewat konstanta `SUMBER_LOGO`, bukan literal
+  4. **#12 — komentar Footer diperbaiki.** Klaim "masih placeholder" dihapus, diganti pernyataan bahwa nilai `KANAL` sudah final dan live, plus kewajiban sinkron dengan `KANAL` di `Contact.jsx`. Nilai email dan WhatsApp diverifikasi sama di kedua file
+  5. **#21 — sumber kebenaran `404.html` ditandai.** Komentar HTML di `public/404.html` menjelaskan alur `public/404.html → build → dist/404.html → root`, dan melarang mengedit versi root
+  6. **#22 — aturan kebersihan branch ditulis + dijalankan.** `contributing.md` dapat langkah 13: cek `git log main..<branch>` (kosong = aman), hapus dengan `git branch -d` (bukan `-D`, biar git menolak kalau belum merge), hapus remote hanya setelah konfirmasi. Dua branch yang sudah merge dihapus lokal: `fix/htaccess-spa-fallback`, `fix/perf-issue-1-11`
+- Hasil tes:
+  - `npm run build` sukses (4.07 dtk). `main` 129.14 KB (gzip 45.94), `vendor-three` 616.16 KB (gzip 157.82)
+  - Skrip cek bundle `contributing.md`: 5 path `/assets/*` di `index.html` root → semua `OK`
+  - 4 nama kelas orphan: `grep` di `src/` → 0 hasil; di CSS build → 0 hasil
+  - `.latar-bengkel-collection` masih ada di CSS build (2 kemunculan, terang + gelap)
+  - 3 dead asset: `grep` di `src/`, `entries/`, `public/` → 0 referensi; setelah build + copy → tidak balik ke root `images/`
+  - Aset yang dirujuk `index.html` lokal (7 path) dan CSS build (1 `url()`) diserve dari root via `python3 -m http.server 8099` → semua `200`
+  - Browser headless (Chrome `--headless=new`), root repo diserve port 8099:
+    - DOM 32.765 byte, React ter-render, tidak ada error console
+    - Screenshot 360 / 768 / 1280 dibandingkan dengan production → layout identik, tidak ada scroll horizontal
+    - Section `about` kosong di DOM **juga terjadi di production** (About menunggu gerbang terbuka), jadi bukan regresi
+- Catatan jujur:
+  - **Cache-Control belum terbukti bekerja.** Butuh `mod_headers` aktif di Hostinger. Kalau modul itu mati, `<IfModule>` membuat blok dilewati diam-diam tanpa error — jadi tidak ada risiko 500, tapi juga tidak ada efek. Verifikasi setelah merge: `curl -I https://ra-labs.tech/` harus memunculkan `cache-control: no-cache, must-revalidate`
+  - **3 dari 4 kelas CSS orphan ternyata sudah dipurge Tailwind dari build sebelumnya.** Diverifikasi dengan mengunduh CSS production lama: `judul-besar`, `judul-hero`, `tautan-teks` → 0 kemunculan. Hanya `.latar-bengkel-koleksi-kontak` yang benar-benar ada di output, karena ditulis sebagai selector CSS biasa di luar `@layer components` sehingga tidak ikut purge. Jadi dampak nyata #16 ke ukuran CSS kecil: gzip 10.938 → 10.934 byte (−4 byte). Nilai sebenarnya adalah kebersihan source, bukan penghematan byte
+  - **`mascot-enjoy.svg` dihapus meski `plan-prd/about-circular-carousel/design.md` menyebut "file tetap, bisa dipakai lagi nanti".** Issue #18 meminta hapus ketiganya dan Bang Rob memilih opsi itu secara eksplisit. Keputusan plan-prd lama dengan ini dibatalkan. Kalau nanti maskot dibutuhkan lagi, file harus dibuat ulang dari artboard
+  - **Branch remote belum dihapus.** `origin/fix/htaccess-spa-fallback` dan `origin/fix/perf-issue-1-11` masih ada; sesuai aturan baru, hapus remote butuh konfirmasi Bang Rob
+  - **`.htaccess` belum divalidasi Apache** (tidak ada `apache2`/`httpd` dan `sudo` di mesin ini). Blok baru dibungkus `<IfModule mod_headers.c>` justru supaya aman kalau modulnya tidak ada

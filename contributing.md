@@ -208,6 +208,41 @@ Lalu buka `https://ra-labs.tech/` dan **verifikasi yang live**, bukan yang lokal
 - Kalau masih bundle lama, berarti hPanel belum menarik `main` atau hasil build tidak ikut ter-commit.
 - Hard refresh (Ctrl+Shift+R) dulu sebelum menyimpulkan cache.
 
+### 13. Bersihkan branch setelah merge
+
+Workflow repo ini PR-only ke `main`, jadi setiap branch `feat/*` / `fix/*` / `docs/*` yang sudah di-merge **harus dihapus**. Tanpa aturan ini, daftar branch menumpuk sampai `git branch` tidak lagi berguna.
+
+**Langkah 1 — pastikan branch benar-benar sudah masuk `main`.** Jangan pernah menghapus tanpa cek ini:
+
+```bash
+git log main..<nama-branch> --oneline
+```
+
+- Output **kosong** → aman dihapus.
+- Output **ada isinya** → branch itu menyimpan commit yang belum ada di `main`. **Jangan dihapus.**
+
+**Langkah 2 — hapus branch lokal:**
+
+```bash
+git branch -d <nama-branch>
+```
+
+Pakai `-d`, bukan `-D`. `-d` menolak menghapus kalau commit-nya belum ter-merge, jadi ini pengaman otomatis.
+
+**Langkah 3 — hapus branch remote** (opsional, kalau mau bersih total). **Minta konfirmasi Bang Rob dulu:**
+
+```bash
+git push origin --delete <nama-branch>
+```
+
+**Cek hasilnya:**
+
+```bash
+git branch -a
+```
+
+Idealnya hanya tersisa `main` dan `origin/main` (plus branch yang memang sedang dikerjakan).
+
 ---
 
 ## Isi deskripsi PR
@@ -314,3 +349,4 @@ Kalau ide butuh salah satu di atas, taruh di subdomain sendiri yang hostingnya m
 - [ ] `engineering.md` sudah diisi
 - [ ] Yang masuk commit hanya file relevan (cek `git status`)
 - [ ] Branch sudah di-push, PR sudah dibuka, URL dikirim ke Bang Rob
+- [ ] Setelah merge: `git log main..<branch>` kosong, lalu branch dihapus

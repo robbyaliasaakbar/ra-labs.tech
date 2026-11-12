@@ -10,6 +10,37 @@ RewriteRule ^(.*)$ https://ra-labs.tech/$1 [R=301,L]
 ErrorDocument 404 /404.html
 
 # ============================================================================
+# CACHE HEADER UNTUK HTML
+# ============================================================================
+#
+# MASALAH YANG DICEGAH
+# index.html tidak punya Cache-Control sama sekali (diverifikasi 12 Nov 2026
+# lewat curl -I ke production: hanya ada ETag dan Last-Modified). Tanpa
+# directive itu, browser bebas memakai heuristic caching -- biasanya 10% dari
+# selisih Last-Modified. Efeknya setelah deploy berikutnya:
+#
+#   index.html lama (dari cache) -> menunjuk bundle hash lama
+#   bundle lama sudah dihapus    -> 404 -> halaman putih
+#
+# Ini persis gejala "sudah merge kok nggak berubah" yang dibahas di
+# contributing.md, tapi penyebabnya cache browser, bukan hPanel.
+#
+# KENAPA no-cache, BUKAN no-store
+# no-cache tetap menyimpan file di cache, tapi mewajibkan revalidasi ke server
+# sebelum dipakai. Karena HTML-nya kecil (6 KB) dan sudah gzip, revalidasi
+# murah -- server biasanya cuma membalas 304 tanpa body. no-store akan
+# membuang cache sepenuhnya dan memaksa unduh ulang penuh setiap kali.
+#
+# Hanya .html yang disentuh. Aset ber-hash di /assets/ justru HARUS di-cache
+# lama (sudah dapat max-age=604800 dari Hostinger) karena namanya berubah
+# setiap build -- itu sebabnya hashing ada.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ============================================================================
 # SPA FALLBACK (Issue #14) -- DAFTAR ROUTE, BUKAN WILDCARD
 # ============================================================================
 #

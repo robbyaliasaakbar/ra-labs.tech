@@ -17,10 +17,14 @@ const NAVIGASI = [
   { id: 'contact', label: 'Contact' },
 ]
 
-/* Kanal koneksi. Daftar ini masih placeholder, sengaja dipisah dari
-   komponen supaya tinggal ganti isi array-nya tanpa menyentuh struktur.
-   Email dan nomor WhatsApp di sini mengikuti section Contact yang sudah
-   live, supaya satu halaman tidak punya dua alamat berbeda.
+/* Kanal koneksi. Daftar ini dipisah dari komponen supaya tinggal ganti isi
+   array-nya tanpa menyentuh struktur.
+
+   NILAI DI SINI SUDAH FINAL DAN LIVE. Email dan nomor WhatsApp di sini
+   mengikuti section Contact yang sudah live, supaya satu halaman tidak
+   punya dua alamat berbeda. Kalau salah satu diubah, `KANAL` di
+   src/components/Contact.jsx WAJIB diubah juga -- dua array ini harus
+   selalu sinkron.
 
    Catatan: footer porto memakai ibborarts@gmail.com dan +6282249072873.
    Dua-duanya beda dari yang dipakai di portal ini. */
